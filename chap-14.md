@@ -55,13 +55,12 @@ MPI除了可以发送或接收连续的数据之外，还可以处理不连续�
 
 ---
 
-*
     MPI_TYPE_CONTIGUOUS(count,oldtype,newtype) IN count 复制个数(非负整数)
     IN oldtype 旧数据类型(句柄)
     OUT newtype 新数据类型(句柄)
-*
+---
     int MPI_Type_contiguous(int count,MPI_Datatype oldtype, MPI_Datatype *newtype)
-*
+---
     MPI_TYPE_CONTIGUOUS(COUNT,OLDTYPE,NEWTYPE,IERROR)
     INTEGER COUNT,OLDTYPE,NEWTYPE,IERROR
 ---
