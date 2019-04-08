@@ -180,6 +180,54 @@ MPI_REDUCE_SCATTER对由sendbuf、count和datatype定义的发送缓冲区数组
 
 ## 13.16 MINLOC和MAXLOC
 
-MPI_MINLOC操作符用于计算全局最小值和这个最小值的索引号，MPI_MAXLOC操作符用于计算全局最大值和这个最大值的索引号。这两个函数的一个用途是计算一个全局最小值/最大值和这个值所在的进程序号。
+`MPI_MINLOC`操作符用于计算全局最小值和这个最小值的索引号，`MPI_MAXLOC`操作符用于计算全局最大值和这个最大值的索引号。这两个函数的一个用途是计算一个全局最小值/最大值和这个值所在的进程序号。
 
-两个操作都是可结合、可交换的。如将MPI_MAXLOC应用于$(u_0,0), (u_1,1), \cdots, (u_{n-1},n-1)$这个序列上进行归约，那么返回结果$(u,r)$满足
+两个操作都是可结合、可交换的。如将`MPI_MAXLOC`应用于$(u_0,0), (u_1,1), \cdots, (u_{n-1},n-1)$这个序列上进行归约，那么返回结果$(u,r)$满足
+
+$$u = u_r = \max_{i=0, \dots, n-1} u_i$$
+且有
+$$u_i < u_r, i = 0, \dots, r-1$$
+
+即u是全局最大值、并且r是第一个全局最大值所在的位置。
+
+同样`MPI_MINLOC`可以被用于返回全局最小值和第一个全局最小值所在的位置。
+
+为了在归约操作中使用`MPI_MINLOC`和`MPI_MAXLOC`，必须提供表示这个值对（值及其索引号）参数的类型。
+MPI定义了七个这样的类型，`MPI_MAXLOC`和`MPI_MINLOC`可以采用下列的数据类型：
+
+表格12 MPI定义的Fortran语言的值对类型
+
+|名字|描述|
+|:--|:--|
+|`MPI_2REAL`|实型值对|
+|`MPI_2DOUBLE_PRECISION`|双精度变量值对|
+|`MPI_2INTEGER`|整型值对|
+
+表格13 MPI定义的C语言的值对类型
+
+|名字|描述|
+|:--|:--|
+|`MPI_FLOAT_INT`       |浮点型和整型|
+|`MPI_DOUBLE_INT`      |双精度和整型|
+|`MPI_LONG_INT`        |长整型和整型|
+|`MPI_2INT`            |整型值对|
+|`MPI_SHORT_INT`       |短整型和整型|
+|`MPI_LONG_DOUBLE_INT` |长双精度浮点型和整型|
+
+
+类型`MPI_2REAL`可以理解成按下列方式定义的类型：
+
+    MPI_TYPE_CONTIGUOUS(2, MPI_REAL, MPI_2REAL)
+
+`MPI_2INTEGER`、`MPI_2DOUBLE_PRECISION`和`MPI_2INT`的定义方式和`MPI_2REAL`相仿。
+
+`MPI_FLOAT_INT`类型和下列类型定义等价：
+
+    type[0] = MPI_FLOAT type[1] = MPI_INT disp[0] = 0
+    disp[1] = sizeof(float)
+    block[0] = 1
+    block[1] = 1
+    MPI_TYPE_STRUCT(2, block, disp, type, MPI_FLOAT_INT)
+
+`MPI_LONG_INT`和`MPI_DOUBLE_INT`的定义方式和`MPI_FLOAT_INT`相仿。
+
