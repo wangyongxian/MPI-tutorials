@@ -231,3 +231,59 @@ MPI定义了七个这样的类型，`MPI_MAXLOC`和`MPI_MINLOC`可以采用下�
 
 `MPI_LONG_INT`和`MPI_DOUBLE_INT`的定义方式和`MPI_FLOAT_INT`相仿。
 
+
+## 13.17 用户自定义归约操作
+
+MPI的归约调用不仅可以使用MPI预定义的归约操作，而且也允许使用用户自己定义的归约操作。
+
+MPI_OP_CREATE将用户自定义的函数function和操作op联系起来，这样的操作op可以象MPI预定义的归约操作一样用于各种MPI的归约函数中。
+
+用户自定义的操作必须是可以结合的。如果commute=true，则此操作同时也是可交换的。如果commute=false，则此操作不满足交换律。
+
+function是用户自定义的函数，必须具备四个参数：invec, inoutvec, len和datatype。在C中，这个函数的原型是：
+
+    typedef void MPI_User_function(void *invec, void *inoutvec, int *len,
+            MPI_Datatype *datatype);
+
+在Fortran中对用户自定义的函数描述如下:
+    FUNCTION USER_FUNCTION(INVEC(*), INOUTVEC(*), LEN, TYPE)
+        <type> INVEC(LEN), INOUTVEC(LEN) 
+        INTEGER LEN,TYPE
+  
+参数datatype用于控制传送给MPI_REDUCE的数据类型。
+用户定义的归约函数按如下方式进行工作：
+
+invec和inoutvec分别指出将要被归约的数据所在的缓冲区的首址，len指出将要归约的元素的个数，datatype指出归约对象的数据类型。
+在用户自定义归约函数中，用数组u[0], ..., u[len-1]和参数invec, len和datatype描述的归约元素相对应，用数组v[0], ..., v[len-1]和参数inoutvec, len和datatype描述的归约元素相对应，w[0], ..., w[len-1]记录归约结果，也由参数inoutvec, len和datatype描述。这样，归约函数的任务就是使得
+
+$$w_i = u_i \cdot v_i, i = 0, \dots, len-1$$
+
+其中，$\cdot$是该函数将实现的归约操作。
+从非正式的角度来看，可以认为invec和inoutvec是函数中长度为len的数组，归约的结果重写了inoutvec的值。每次调用此函数都导致了对这len个元素逐个进行相应的操作。
+
+通常的数据类型可以传给用户自定义的参数，然而互不相邻的数据类型可能会导致低效率。
+在用户自定义的函数中不能调用MPI中的通信函数。
+当函数出错时可能会调用`MPI_ABORT`。
+
+`MPI_OP_FREE`将用户自定义的归约操作撤消，将op设置成`MPI_OP_NULL`。
+
+---
+
+    MPI_OP_FREE(op)
+    IN op 操作(句柄)
+    
+---
+
+    int MPI_Op_free(MPI_Op *op) 
+    
+---
+
+    MPI_OP_FREE(OP, IERROR)
+    INTEGER OP, IERROR
+    
+---
+
+
+## 13.18 小结
+
+组通信是较为复杂的一种通信方式，它需要程序员在编写组通信语句时头脑中同时有两个执行模型：一是当程序运行起来后当前正在运行的进程的行为方式；二是将组通信作为一个整体来考虑，所有进程的行为方式。只有将这两者结合起来，才能够准确把握组通信的内涵，才能够编写出正确的组通信语句。
