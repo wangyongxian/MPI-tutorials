@@ -1,4 +1,3 @@
-<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=default"></script>
 
 # 第13章 组通信MPI程序设计
 
@@ -183,4 +182,4 @@ MPI_REDUCE_SCATTER对由sendbuf、count和datatype定义的发送缓冲区数组
 
 MPI_MINLOC操作符用于计算全局最小值和这个最小值的索引号，MPI_MAXLOC操作符用于计算全局最大值和这个最大值的索引号。这两个函数的一个用途是计算一个全局最小值/最大值和这个值所在的进程序号。
 
-两个操作都是可结合、可交换的。如将MPI_MAXLOC应用于\\((u_0,0), (u_1,1), \\cdots, (u_{n-1},n-1)\\)这个序列上进行归约，那么返回结果\\((u,r)\\)满足
+两个操作都是可结合、可交换的。如将MPI_MAXLOC应用于$(u_0,0), (u_1,1), \cdots, (u_{n-1},n-1)$这个序列上进行归约，那么返回结果$(u,r)$满足
