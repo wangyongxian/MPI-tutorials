@@ -1,152 +1,150 @@
-# Common Mistakes in OpenMP and How To Avoid Them: A Collection of Best Practices 
+#OpenMP中的常见错误以及如何避免它们：最佳实践的集合 
 
-**Michael Su ̈ß and Claudia Leopold** 
+**MichaelSüß和Claudia Leopold**
 
-*University of Kassel, Research Group Programming Languages / Methodologies, Wilhelmsh ̈oher Allee 73, D-34121 Kassel, Germany*
- {msuess, leopold}@uni-kassel.de 
+University of Kassel, Research Group Programming Languages / Methodologies, Wilhelmsh ̈oher Allee 73, D-34121 Kassel, Germany
+ {msuess，leopold}@uni-kassel.de 
 
-**Abstract.** 
+**摘要** 
 
-Few data are available on common mistakes made when us- ing OpenMP. This paper presents a study on the programming errors observed in our courses on parallel programming during the last two years, along with numbers on which compilers and tools were able to spot them. The mistakes are explained and best practices for program- mers are suggested to avoid them in the future. The best practices are presented in the form of an OpenMP checklist for novice programmers. 
+关于使用OpenMP时常见错误的数据很少。本文介绍了在过去两年中我们的并行编程课程中观察到的编程错误，同时报告了有多少是编译器和工具能够自动发现的。对每种错误，本文都进行了解释，并为程序员今后如何避免它们提供了最佳实践。
 
-## 1 Introduction 
+## 1 引言 
 
-One of the main design goals of OpenMP was to make parallel programming easier. Yet, there are still fallacies and pitfalls to be observed when novice pro- grammers are trying to use the system. We have therefore conducted a study on a total of 85 students visiting our lecture on parallel programming, and observed the mistakes they made when asked to prepare assignments in OpenMP. The study is described in detail in Sect. 2. 
+OpenMP的主要设计目标之一是使并行编程更容易。然而，当新手程序员试图使用它时，仍然存在许多误解和陷阱。因此，我们对参加我们关于并行编程的讲座的85名学生进行了一项研究，并观察了他们在OpenMP作业中所犯的错误。该研究在第2节有详细描述。
 
-We are concentrating on the most common mistakes from our study for the rest of this paper. They are briefly introduced in Tab. 1, along with a count of how many teams (consisting of two students each) have made the mistake each year. We have chosen to divide the programming mistakes into two categories: 
+在本文的剩余部分章节，我们将集中讨论最常见的错误，简要情况列在表1中，包括每年都有多少组（每组两名）学生犯错。我们将所有这些编程错误分为两类：
 
-1. Correctness Mistakes: all errors impacting the correctness of the program. 
-2. Performance Mistakes: all errors impacting the speed of the program. These lead to slower programs, but do not produce incorrect results. 
+1. 正确性方面的错误：所有错误都会影响程序的正确性。 
+2. 性能方面的错误：所有错误都会影响程序的速度，通常会导致程序变慢，但不会产生错误结果。
 
-Sect. 3 explains the mistakes in more detail. Also in this section, we propose possible ways and best practices for novice programmers to avoid these errors in the future. Sect. 4 reports on tests that we conducted on a variety of OpenMP- compilers to figure out, if any of the programming mistakes are spotted and/or possibly corrected by any of the available compilers. In Sect. 5, all suggestions made this far are condensed into an OpenMP programming checklist, along with others from our own programming experiences. Sect. 6 reviews related work, while Sect. 7 sums up our results. 
+第3节更详细地解释了各类错误，同时，为新手程序员提出了可能的方法和最佳实践，以避免将来出现这些错误。第4节报告我们在各种OpenMP编译器上进行的测试，以确定利用编译器可以发现或纠正哪些编程错误。在第5节中，我们将所提出的所有建议列成一个OpenMP编程清单，同时给出我们自己编程经验中的其他建议。第6节综述了相关的工作。最后第7节给出小结。
 
-
-
-| Problem                                  | 2004 | 2005 | Sum  |
+| 问题| 2004年| 2005年| 总和|
 | ---------------------------------------- | ---- | ---- | ---- |
-| **Correctness Mistakes**                 |      |      |      |
-| 1. Access to shared variables not protected | 8    | 10   | 18   |
-| 2. Use of locks without `flush` | 7 | 11 | 18 |
-| 3. Read of shared variable without `flush` |5|10|15|
-| 4. Forget to mark `private` variables as such |6|5|11|
-| 5. Use of `ordered` clause without `ordered` construct |2|2|4|
-| 6. Declare loop variable in `#pragma omp parallel for` as `shared` |1|2|3|
-| 7. Forget to put down `for` in `#pragma omp parallel for` |2|0|2|
-| 8. Try to change num. of threads in parallel reg. after start of reg. |0|2|2|
-| 9. `omp_unset_lock()` called from non-owner thread |2|0|2|
-| 10. Attempt to change loop variable while in `#pragma omp for` |0|2|2|
-| **Performance Mistakes**                 |      |      |      |
-| 11. Use of `critical` when `atomic` would be sufficient |8|1|9|
-| 12. Put too much work inside `critical` region |2|4|6|
-| 13. Use of orphaned construct outside parallel region |2|2|4|
-| 14. Use of unnecessary `flush` |3|1|4|
-| 15. Use of unnecessary `critical` |2|0|2|
-| **Total Number of Groups** | 26|17|43|
+| **影响正确性的错误** | | | |
+| 1.访问不受保护的共享变量| 8 | 10 | 18 |
+| 2.使用锁时缺少`flush` |7 | 11 | 18 |
+| 3.在没有`flush`的情况下读取共享变量 | 5 | 10 | 15 |
+| 4.忘记标记`private`变量 | 6 | 5 | 11 |
+| 5.使用`ordered`子句而不使用`ordered`构造| 2 | 2 | 4 |
+| 6.将`#pragma omp parallel for`中的循环变量声明为`shared` | 1 | 2 | 3 |
+| 7.忘记在`#pragma omp parallel for`中的`for` | 2 | 0 | 2 |
+| 8.在并行区开始后尝试更改线程数量 | 0 | 2 | 2 |
+| 9.从非所有者线程中调用`omp_unset_lock（）` | 2 | 0 | 2 |
+| 10.在`#pragma omp for`中尝试更改循环变量 | 0 | 2 | 2 |
+| **影响性能的错误** | | | |
+| 11.当`atomic`足够时，却使用了`critical` | 8 | 1 | 9 |
+| 12.在`critical`区域内放置太多工作| 2 | 4 | 6 |
+| 13.在并行区域外使用了孤立的构造 | 2 | 2 | 4 |
+| 14.使用了不必要的`flush` | 3 | 1 | 4 |
+| 15.使用了不必要的`critical` | 2 | 0 | 2 |
+| **小组总数** | 26 | 17 | 43 |
 
 
-Table 1. The list of frequently made mistakes when programming in OpenMP 
+表1.在OpenMP中编程时经常出错的列表 
 
-## 2 Survey Methodology 
+## 2 调查方法 
 
-We have evaluated two courses for this study. Both consisted of students on an undergraduate level. The first course took place in the winter term of 2004 / 2005, while the second one took place in the winter term of 2005 / 2006. The first course had 51 participants (26 groups of mostly two students), the second one had 33 participants (17 groups). The lecture consisted of an introduction to parallel computing and parallel algorithms in general, followed by a short introduction of about five hours on OpenMP. Afterwards, the students were asked to prepare programming assignments in teams of two people, which had to be defended before the authors. During these sessions (and afterwards in preparation for this paper), we analyzed the assignments for mistakes, and the ones having to do with OpenMP are presented in this paper. 
+本研究中，我们评估了两门课程，学生均为本科层次。第一门课程在2004-2005年冬季学期，第二门课程在2005-2006年冬季学期。第一门课程有51名学员（26组，大多数是每组两名学生），第二门课程有33名参加者（17组）。课堂内容包括对并行计算和并行算法的介绍，以及约5小时的OpenMP知识介绍。之后，要求学生以两人为一组完成编程作业，学生必须给老师（本文作者）当面讲解答辩。其后，我们分析了学生作业中常犯的错误类型，本文重点介绍与OpenMP有关的错误。
 
-The assignments consisted of small to medium-sized programs, among them: 
+编程作业主要包括中小型的任务，其中包括： 
 
-- find the first N prime numbers
-- simulate the dining philosophers problem using multiple threads
-- count the number of connected components in a graph
-- write test cases for OpenMP directives / clauses / functions 
+- 找出前N个素数。
+- 使用多个线程模拟用餐哲学家的问题。
+- 计算图的连接分量个数
+- 为OpenMP指令/子句/函数编写测试用例 
 
-A total of 231 student programs in C or C++ using OpenMP were taken into account and tested on a variety of compilers (e. g. from SUN, Intel, Portland Group, IBM, as well as on the free OMPi compiler). Before we begin to evaluate the results, we want to add a word of warning: Of course, the programming errors presented here have a direct connection to the way we taught the lecture. Topics we talked about in detail will have led to fewer mistakes, while for other topics, the students had to rely on the specification. Moreover, mistakes that have been corrected by the students before submitting their solution are not taken into account here. For these reasons, please take the numbers presented in Tab. 1 as what they are - mere indications of programming errors that novice programmer might make. 
+总收集了231个程序，均使用了C/C++及OpenMP编程语言，并在各种编译器上进行测试（如来自SUN，Intel，Portland Group，IBM以及免费的OMPi编译器）。在开始讨论评估结果之前，这里值得给出说明的是：本文提供的编程错误当然跟我们讲授课程的方式有直接关系，对于我们课堂上讲授详细的那些主题，错误数量大大减少，而对于其它主题，学生们可依赖的只有OpenMP规范文档。此外，对于那些学生在提交作业前就已经纠正的错误，本文也不予考虑。为此，在使用表1中那些统计结果时请谨慎，它们仅仅给出一种新手程序员可能会犯错的可能性。
 
-## 3 Common Mistakes in OpenMP and Best Practices to Avoid Them 
+## 3 OpenMP中的常见错误以及如何避免这些错误的最佳实践 
 
-In this section, we will discuss the most frequently made mistakes observed during our study, as well as suggest possible solutions to make them occur less likely. There is one universal remark for instructors that we want to discuss beforehand: We based our lecture on assignments and personal feedback, and found this approach to be quite effective: As soon as we pointed out a mistake in the students programs during the exam, a group would rarely repeat it again. Only showing example programs in the lecture and pointing out possible problems did not have the same effect. 
+本节将讨论我们观察到的最常犯的错误，并提出尽可能避免它们的解决方案。教师们有一个共识：如果课堂内容基于学生个人的作业和反馈，一旦指出，小组就很少再犯；但如果课堂上只以示例方式讲解则没有同样的效果。
 
-There are some mistakes, where we cannot think of any best practises to avoid the error. Therefore, we will just shortly sketch these at this point, while all other mistakes are discussed in their own section below (the number before the mistake is the same as in Tab. 1): 
+有一些错误，我们目前也想不出避免它的最佳实践。以下先列举这些错误（编号跟表1相同）：
 
-2. *Use of locks without `flush`*: Before version 2.5 of the OpenMP specification, lock operations did not include a `flush`. The compilers used by our students were not OpenMP 2.5 compliant, and therefore we had to mark a missing `flush` directive as a programming error. 
+2. 使用锁时缺少`flush`：在OpenMP规范的2.5版之前，锁操作不包括`flush`。我们学生使用的编译器不符合OpenMP 2.5规范，因此我们必须将缺少的“flush”指令标记为编程错误。
 
-5. *Use of `ordered` clause without `ordered` construct*: The mistake here is to put an ordered clause into a for worksharing construct, without specifying with a separate ordered clause inside the enclosed for loop, what is supposed to be carried out in order. 
+5. 使用`ordered`子句而不使用`ordered`构造：这里的错误是将一个ordered子句直接放入for工作共享构造中，而不在for循环内的单独指定一个ordered子句。 
 
-8. *Try to change number of threads in parallel region after start of region*: The number of threads carrying out a parallel region can only be changed before the start of the region. It is therefore a mistake to attempt to change this number from inside the region.
+8. 在并行区开始后尝试更改线程数量：执行并行区域的线程数只能在区域开始之前更改。因此，尝试从并行区内更改此数字是错误的。
 
-10. Attempt to change loop variable while in `#pragma omp for`: It is explicitly forbidden in the specification to change the loop variable from inside the loop. 
+10. 在`#pragma omp for`中尝试更改循环变量：规范中明确禁止在循环内部更改循环变量。 
 
-11. Use of `critical` when `atomic` would be sufficient: There are special cases when synchronisation can be achieved with a simple `atomic` construct. Not using it in this case leads to potentially slower programs and is therefore a performance mistake. 
+11. 当`atomic`足够时，却使用了`critical`：有一些特殊情况可以用简单的`atomic`结构实现同步。在这种情况下不使用它会导致程序可能更慢，因此是性能错误。
 
-13. Use of orphaned construct outside parallel region: When using a combined worksharing construct, sometimes our students would forget to put down the `parallel`, producing an orphaned construct. In other cases, the parallel region was forgotten altogether, leading e. g. to orphaned `critical` constructs. 
+13. 在并行区域外使用了孤立的构造：当使用跟并行区组合的工作共享构造时，有时我们的学生会忘记在书写`parallel`，从而产生一个孤立的构造。还有一些情况下，完全忘记了并行区，导致了诸如孤立的`critical`构造。
 
-14. Use of unnecessary `flush`: `flush` constructs are implicitly included in certain positions of the code by the compiler. Explicitly specifying a `flush` immediately before or after these positions is considered a performance mistake. 
+14. 使用了不必要的`flush`：`flush`结构被编译器隐含地包含在代码的某些位置。在这些位置之前或之后再显式指定`flush`被认为是性能错误。
 
-15. Use of unnecessary `critical`: The mistake here is to protect memory accesses with a `critical` construct, although they need no protection (e.g. on private variables or on other occasions, where only one thread is guaranteed to access the location). 
+15. 使用了不必要的`critical`：这里的错误是使用`critical`结构来保护内存访问，尽管它们并不需要保护（例如对私有变量进行保护，或者对实际上只会有一个线程访问的内存仍然进行保护） 。 
 
-### 3.1 Access to Shared Variables Not Protected 
+### 3.1 访问不受保护的共享变量 
 
-The most frequently made and most severe mistake during our study was to not avoid concurrent access to the same memory location. OpenMP provides several constructs for protecting critical regions, such as the `critical` construct, the `atomic` construct and locks. Although all three of these constructs were introduced during the lecture, many groups did not use them at all, or forgot to use them on occasions. When asked about it, most of them could explain what a critical region was for and how to use the constructs, yet to spot these regions in the code appears to be difficult for novice parallel programmers. 
+最常犯和最严重的错误是没有避免对同一个内存位置的并发访问。OpenMP提供了几种用于保护关键区域的构造，例如`critical`构造，`atomic`构造和锁。尽管在课堂讲座中介绍过所有这三种结构，但许多小组根本没有使用它们，或者会偶尔忘记使用它们。当被问到这个问题时，他们中的大多数都可以解释关键区域是什么以及如何使用这些构造，但如何代码中发现这些区域，对于新手并行程序员来说似乎很难。
 
-A way to make novice programmers aware of the issue is to use the available tools to diagnose OpenMP programs. For example, both the Intel Thread Checker and the Assure tool find concurrent accesses to a memory location. 
+让新手程序员意识到这个问题的一种方法是使用工具来诊断OpenMP程序。例如，Intel Thread Checker和Assure工具都可以找到对内存位置的并发访问。
 
-### 3.2 Read of Shared Variable without `Flush` 
+### 3.2 读取没有“Flush”的共享变量
 
-The OpenMP memory model is a complicated beast. Whole sections in the OpenMP specification have been dedicated to it, as well as a whole paper written about it [1]. One of its complications is the error described here. Simply put, when reading a shared variable without flushing it first, it is not guaranteed to be up to date. Actually, the problem is even more complicated, as not only the reading thread has to flush the variable, but also any thread writing to it beforehand. Many students did not realize this and just read shared variables without any further consideration. On many common architectures this will not be a problem, because flushes are carried out frequently there. Quite often, the problem does not surface in real-world programs, because there are implicit flushes contained in many OpenMP constructs, as well. 
+OpenMP内存模型是一个复杂的野兽。OpenMP规范中的所有部分都致力于它，甚至要花整篇论文讨论它[1]。这条错误就是其中复杂性的一个体现。简单地说，如果读取共享变量而不首先刷新它，那就不能保证它是最新的。实际上，问题更加复杂，因为不仅读取线程必须刷新该变量，而且预先写入的线程也需要刷新。许多学生没有意识到这一点，没有采取任何措施就开始直接读取共享变量。在许多常见架构中，因为经常进行自动刷新操作，故而这个问题并不会表现出来。此外，许多OpenMP结构中都包含隐式刷新，因而该问题在真实程序中也没有凸现出来。
 
-In other cases, students simply avoided the problem by declaring shared variables as `volatile`, which puts an implicit `flush` before every read and after every write of any such variable. Of course, it also disables many compiler optimizations for this variable and therefore is often the inferior solution. 
+还有一些情况下，学生通过将共享变量声明为`volatile`来避免这个问题，它在每次对该变量的读取之前和每次写入之后放置一个隐式的`flush`。当然，由于这样做还会禁用编译器的许多优化，因此通常是较差的解决方案。
 
-The proper solution, of course, is to make every OpenMP programmer aware of this problem, by clearly stating that every read to a shared variable must be preceded by a `flush`, except in very rare edge-cases not discussed here. This `flush` can be explicitly written down by the programmer, or it can be implicit in an OpenMP construct. 
+正确的解决方案是让每个OpenMP程序员都意识到这个问题，明确说明对共享变量的每次读取都必须以`flush`开头，除非在这里没有讨论到的非常罕见的极端情况。这个`flush`可以由程序员明确写下来，也可以隐含在OpenMP构造中。
 
-Version 2.5 of the OpenMP specification includes a new paragraph on the memory model. Whether or not this is enough to make novice programmers aware of this pitfall remains to be seen. 
+OpenMP规范的2.5版包含了关于内存模型的新段落。这是否足以使新手程序员意识到这个陷阱还有待观察。
 
-### 3.3 Forget to Mark Private Variables as such 
+### 3.3 忘记标记`private`变量 
 
-This programming error has come up surprisingly often in our study. It was simply forgotten to declare certain variables as private, although they were used in this way. The default sharing attribute rules will make the variable shared in this case. 
+在我们的研究中，这种编程错误经常出现。明明是以私有方式使用的变量，却忘记将其声明为私有变量，此时OpenMP的默认规则会将其视为共享变量。
 
-Our first advice to C and C++ programmers to avoid this error in the future is to use the scoping rules of the language itself. C and C++ both allow variables to be declared inside a parallel region. These variables will be private (except in rare edge cases described in the specification, e. g. static variables), and it is therefore not necessary to explicitly mark them as such, avoiding the mistake altogether. 
+对于C/C++程序员的第一个建议是，尽可能使用语言本身的提供的作用域规则。C和C++都允许在并行区域内声明变量，这些变量将是私有的（除了在规范中描述的罕见极端情况，例如静态变量），因此无需在OpenMP指令中明确声明，从而完全避免了这个错误。
 
-Our second advice to novice programmers is to use the `default(none)` clause. It will force each variable to be explicitly declared in a data-sharing attribute clause, or else the compiler will complain. We will not go as far as to suggest to make this the default behaviour, because it certainly saves the experienced programmer some time to not have to put down each and every shared variable in a shared clause. But on the other hand, it would certainly help novice programmers who probably do not even know about the `default` clause. 
+对新手程序员的第二个建议是使用`default(none)`子句。这将要求在数据共享属性子句中显式声明每个变量，否则编译器会抱怨。我们不会建议将其作为OpenMP的默认行为，因为当前的默认规则对于有经验的程序员会更节约时间(不必在共享子句中放下每个共享变量）。
 
-It might also help if the OpenMP compilers provided a switch for showing the data-sharing attributes for each variable at the beginning of the parallel region. This would enable programmers to check if all their variables are marked as intended. An external tool for checking OpenMP programs would be sufficient for this purpose as well. 
+如果OpenMP编译器能提供一个开关，用于在并行区域的开头显示每个变量的数据共享属性，这也可能有所帮助。这将使程序员能够检查他们的所有变量是否都按预期进行了声明。这个功能可在那些检查OpenMP程序的第三方工具中加以实现。
 
-Another solution to the problem is the use of autoscoping as proposed by Lin et al. [2]. According to this proposal, all data-sharing attributes are determined automatically, and therefore the compiler would correctly privatize the variables in question. The proposed functionality is available in the Sun Compiler 9 and newer. 
+该问题的另一个解决方案是使用Lin等人提出的自动扫描[2]。根据该提议，编译器负责确定所有数据的共享属性，会正确地将所涉及的变量私有化。Sun Compiler 9及更高版本中提供了这个功能。
 
-Last but not least, the already mentioned tools can detect concurrent accesses to a shared variable. Since the wrongly declared variables fall into this category, these tools should throw a warning and alert the programmer that something is wrong. 
+最后值得一提的是，本错误导致本应私有的变量成为共享变量，前述已经提到的工具可以检测对共享变量的并发访问，因此这些工具应该发出警告并提醒程序员有问题。
 
-### 3.4 Declare Loop Variable in `#pragma omp parallel for` as Shared 
+### 3.4 在`#pragma omp parallel for`中声明循环变量为共享 
 
-This mistake shows a clear misunderstanding of the way the for worksharing construct works. The OpenMP specification states clearly that these variables are implicitly converted to private, and all the compilers we tested this on performed the conversion. The surprising fact here is that many compilers did the conversion silently, ignoring the shared declaration and not even throwing a warning. More warning messages from the compilers would certainly help here. 
+这个错误表明了对工作共享构造工作方式的明显误解。OpenMP规范明确指出这些变量被隐式转换为私有，并且我们测试的所有编译器都执行了转换。这里令人惊讶的事实是，许多编译器默默地进行转换，忽略了共享声明，甚至没有发出警告。来自编译器的更多警告消息肯定会有所帮助。
 
-### 3.5 Forget to Put down for in `#pragma omp parallel for` 
+### 3.5 忘记在`#pragma omp parallel for`中的`for` 
 
-The mistake here is, to attempt to use the combined worksharing construct `#pragma omp parallel for`, but forget to put down the `for` in there. This will lead to every thread executing the whole loop, and not only parts of it as intended by the programmer. 
+这里的错误是，尝试使用组合的工作共享构造`#pragma omp parallel for`，但忘记书写最后的`for`。这将导致每个线程都完整地执行一遍整个循环，而不仅仅是程序员所期望的部分。
 
-In most cases, this mistake will lead to the mistake specified in Sect. 3.1, and therefore can be detected and avoided by using the tools specified there. 
+在大多数情况下，这个错误进一步又会产生第3.1节中的错误，因此可以使用那里指定的工具检测和避免。
 
-One way to avoid the mistake altogether is to specify the desired `schedule` clause, when using the `for` worksharing construct. This is a good idea for portability anyways, as the default `schedule` clause is implementation defined. It will also lead to the compiler detecting the mistake we have outlined here, as `#pragma omp parallel schedule(static)` is not allowed by the specification and yields compiler errors. 
+完全避免该错误的一种方法是在使用`for`工作共享结构时显式指定所需的`schedule`子句。这对于可移植性来说是一个好主意，因为默认的`schedule`子句行为是跟具体的实现相关的。它还将导致编译器检测到这里的错误，因为规范不允许“#pragma omp parallel schedule（static）”这种格式，并会产生编译器错误。
 
-### 3.6 `omp_unset_lock()` Called from Non-Owner Thread 
+### 3.6 从非所有者线程中调用`omp_unset_lock()` 
 
-The OpenMP-specification clearly states: 
+OpenMP规范明确指出： 
 
-> The thread which sets the lock is then said to own the lock. A thread which owns a lock may unset that lock, returning it to the unlocked state. A thread may not set or unset a lock which is owned by another thread.  ([3, p. 102]) 
+>设置锁的线程拥有锁。拥有锁的线程可以取消该锁定，将其恢复到解锁状态。一个线程不能设置(set)、或取消设置(unset)另一个线程所拥有的锁。（[3，p.102]）
 >
 
-Some of our students still made the mistake to try to unlock a lock from a non-owner thread. This will even work on most of the compilers we tested, but might lead to unspecified behaviour in the future. 
+我们的一些学生仍然犯了错误，试图从非所有者线程解锁。我们测试的大多数编译器甚至对此也不报错，但可能导致不可预期的结果。
 
-To avoid this mistake, we have proposed to our students to use locks only when absolutely necessary. There are cases when they are needed (for example to lock parts of a variable-sized array), but most of the times, the `critical` construct provided by OpenMP will be sufficient and easier to use. 
+为了避免这个错误，我们建议学生只在绝对必要时使用锁。大多数情况下，OpenMP提供的`critical`构造将足够且易于使用，仅在少数情况下使用锁（例如锁定可变大小数组的一部分）。
 
-### 3.7 Put too much Work inside Critical Region 
+### 3.7 在`critical`区域内放置太多工作 
 
-This programming error is probably due to the lack of sensitivity for the cost of a critical region found in many novice programmers. The issue can be split into two subissues: 
+新手程序员容易出现这种编程错误，可能是由于他们对关键区域造成的代价缺乏足够的敏感性。该问题可分为两个子问题：
 
-1. Put more code inside a critical region than necessary, thereby potentially blocking other threads longer than needed. 
+1. 在关键区域内放置远超其必要性的代码，可能阻塞住其他线程更长的时间。 
 
-2. Go through the critical region more often than necessary, thereby paying the maintenance costs associated with such a region more often than needed. 
+2. 经过关键区域的频次更多，超出其必要性，从而付出区域相关的更大维护成本。 
 
-The solution to the first case is obvious: The programmer needs to check if each and every line of code that is inside a critical region really needs to be there. Complicated function calls, for example, have no business being in there most of the time, and should be calculated beforehand if possible. 
+第一种情况的解决方案显而易见：程序员需要检查关键区域内的每一行代码是否真的需要存在。例如，大多数情况下，复杂的函数调用可以事先计算，没有必要出现在关键区域。
 
-As an example for the second case, consider the following piece of code, which some of our students used to find the maximum value in an array: 
+第二种情况，我们考虑以下的学生代码，用来查找数组中的最大值： 
 
-```c
+```C
 #pragma omp parallel for 
 for (i = 0; i < N; ++i) { 
   #pragma omp critical 
@@ -156,177 +154,168 @@ for (i = 0; i < N; ++i) {
 } 
 ```
 
-The critical region is clearly in the critical path in this version, and the cost for it therefore has to be paid $N$ times. Now consider this slightly improved version: 
+由于`critical`区域出现在关键路径上，因此其开销发生了$ N $次。现在考虑以下这个略有改进的版本：
 
-```c
+```C
 #pragma omp parallel for 
 for (i = 0; i < N; ++i) { 
   #pragma omp flush (max) 
   if (arr[i] > max) { 
     #pragma omp critical 
     { 
-      if (arr[i]>max)max=arr[i]; 
+      max=arr[i]; 
     } 
   }
 }
 ```
 
-This version will be faster (at least on architectures, where the `flush` operation is significantly faster than a critical region), because the critical region is entered less often. Finally, consider this version: 
+这个版本会更快（至少在架构上，“flush”操作明显快于关键区域），因为进入关键区域的频率较低。最后，考虑这个版本：
 
-```c
+```C
 #pragma omp parallel 
 { 
-  int priv max; 
+  int priv_max; 
   #pragma omp for 
   for (i = 0; i < N; ++i) {
-    if (arr[i] > priv max) priv max = arr[i]; 
+    if (arr[i] > priv_max) priv max = arr[i]; 
   } 
   #pragma omp flush (max) 
-  if (priv max > max) { 
+  if (priv_max > max) { 
     #pragma omp critical 
     {
-      if (priv max > max) max = priv max; 
+      max = priv_max; 
     } 
   }
 }
 ```
 
-This is essentially a reimplementation of a reduction using the `max` operator. We have to resort to reimplementing this reduction from scratch here, because reductions using the `max` operator are only defined in the Fortran version of OpenMP (which in itself is a fact that many of our students reported to have caused confusion). Nevertheless, it is possible to write programs this way, and by showing novice programmers techniques like the ones sketched above, they get more aware of performance issues. 
+这基本上是重新实现了使用`max`运算符的归约操作，之所以这样，是因为在OpenMP规范中，使用`max`运算符的归约仅针对Fortran语言（这本身就是引发学生迷惑混淆的原因）。以这种方式编写程序，并将其中的技巧展示给新手程序员，有助于他们更加深入理解性能问题。
 
-| File                               | icc  | pgcc | sun  | guide | xlc  | ompi | assure |itc|
-| ---------------------------------- | ---- | ---- | ---- | ----- | ---- | ---- | ------ | ------ |
-| **Correctness Mistakes**           |      |      |      |       |      |      |        ||
-| 1. access_shared                   |      |      |      |       |      |      | eE |eE|
-| 2. locks_flush                     |      |      |      |       |      |      |        ||
-| 3. read_shared_var                 |      |      |      |       |      |      |        |(eE)|
-| 4. forget_private (=access_shared) |      |      |      |       |      |      | eE |eE|
-| 5. ordered_without_ordered         |      |      |      |       |      |      |        |eW|
-| 6. shared_loop_var                 | cE   | cC   | cW+C | cE    | cC   | cC   | cE     |cE|
-| 7. forget_for                      |      |      |      |       |      |      |        ||
-| 8. change_num_threads              |      |      |      |       |      |      |        ||
-| 9. unset_lock_diff_thread          |      |      |      |       | cW |      |        ||
-| 10. change_loop_var                |      |      |      |       |      |      |        ||
-| **Performance Mistakes**           |      |      |      |       |      |      |        ||
-| 11. crit_when_atomic               |      |      |      |       |      |      |        ||
-| 12. too_much_crit (no test!)       |      |      |      |       |      |      |        ||
-| 13. orphaned_const                 |      |      | rW |       |      |      |        ||
-| 14. unnec_flush                    |      |      |      |       |      |      |        ||
-| 15. unnec_crit                     |      |      |      |       |      |      |        ||
+## 4 编译器和工具 
 
+有许多不同的编译器都支持OpenMP规范，我们想知道，哪些能够检测到第3节中描述的编程错误。为此，我们为每个错误编写了一个简短的测试用例。表2报告了使用不同编译器的测试结果。
 
-Table 2. How Compilers deal with the Problems 
+表2. 怎样使用编译器诊断和发现问题 
 
+| 档案                                 | icc  | pgcc | 太阳   | guide | xlc  | ompi | assure | itc  |
+| ------------------------------------ | ---- | ---- | ------ | ----- | ---- | ---- | ------ | ---- |
+| **影响正确性的错误**                 |      |      |        |       |      |      |        |      |
+| 1. access_shared                     |      |      |        |       |      |      | eE     | eE   |
+| 2. locks_flush                       |      |      |        |       |      |      |        |      |
+| 3. read_shared_var                   |      |      |        |       |      |      |        | (eE) |
+| 4. forget_private（= access_shared） |      |      |        |       |      |      | eE     | eE   |
+| 5. ordered_without_ordered           |      |      |        |       |      |      |        | EW   |
+| 6. shared_loop_var                   | cE   | cC   | cW + C | cE    | cC   | cC   | cE     | cE   |
+| 7. forget_for                        |      |      |        |       |      |      | (eE)   | (eE) |
+| 8. change_num_threads                |      |      |        |       |      |      |        |      |
+| 9. unset_lock_diff_thread            |      |      |        |       |      |      |        |      |
+| 10. change_loop_var                  |      |      |        |       | cW   |      |        |      |
+| **影响性能的错误**                   |      |      |        |       |      |      |        |      |
+| 11. crit_when_atomic                 |      |      |        |       |      |      |        |      |
+| 12. too_much_crit（没有测试！）      |      |      |        |       |      |      |        |      |
+| 13. orphaned_const                   |      |      | rW     |       |      |      |        |      |
+| 14. unnec_flush                      |      |      |        |       |      |      |        |      |
+| 15. unnec_crit                       |      |      |        |       |      |      |        |      |
 
+第一列中，给出我们测试程序的名称，错误编号与表1相同。由于我们想不出如何测试问题12（在`critical`区域内放置太多工作），因此省略了该问题。测试程序4与测试程序1相同，因此结果也相同。表格的其余部分描述了以下编译器的结果：
 
-## 4 Compilers and Tools 
+* 英特尔编译器9.0（icc）
 
-There are a multitude of different compilers for OpenMP available, and we wanted to know, if any of them were able to detect the programming errors sketched in Sect. 3. Therefore we have written a short testcase for each of the programming mistakes. Tab. 2 describes the results of our tests on different compilers. 
+* Portland Group Compiler 6.0（pgcc）
+* Sun编译器5.7（sun）
+* KAP / Pro工具集C / C ++ 4.0的guide组件（guide）  
+* IBM XL C / C ++企业版7.0（xlc）
+* OMPi编译器0.8.2（ompi）
+* KAP / Pro工具集C / C ++ 4.0的assure组件（assure）  
+* 英特尔线程检查器2.2（itc） 
 
-The numbers in the first column are the same as in Tab. 1. The second column contains the names of our test programs. We could not think of a sound test for problem 12 (put too much work inside `critical` region), and therefore the results for this problem are omitted. Test program four is the same as test program one, and therefore the results are the same as well. The rest of the table depicts results for the following compilers (this list is not sorted by importance, nor in any way representative, but merely includes all the OpenMP-compilers we had access to): 
+最后两个条目（assure和itc）本身不是编译器，而是帮助程序员在其OpenMP程序中发现错误的工具。据我们所知，sssure已经被英特尔线程检测器所超越并取代，但它仍然安装在许多计算中心。我们无法找到任何类似lint的工具来检查C语言中的OpenMP程序，但有一些商业上可用的Fortran解决方案。
 
-* Intel Compiler 9.0 (icc)
-* Portland Group Compiler 6.0 (pgcc)
-* Sun Compiler 5.7 (sun)
-* Guide component of the KAP/Pro Toolset C/C++ 4.0 (guide)  
-* IBM XL C/C++ Enterprise Edition 7.0 (xlc)
-* OMPi Compiler 0.8.2 (ompi)
-* Assure component of the KAP/Pro Toolset C/C++ 4.0 (assure)  
-* Intel Thread Checker 2.2 (itc) 
+表中使用的字母代码含义如下。
 
-The last two entries (assure and itc) are not compilers, but tools to help the programmer find mistakes in their OpenMP programs. As far as we know, Assure was superseded by the Intel Thread Checker and is no longer available, nevertheless it is still installed in many computing centers. We were not able to find any lint-like tools to check OpenMP programs in C, there are however solutions for Fortran available commercially. 
+1. 第一个（非大写）字母表明编译时何时能检测出错误：c=编译时(compiletime)，r=运行时(runtime)，e=估值时(evalation)。其中，只有Assure和Intel Thread Checker会有估值步骤。
+2. 第二个（大写）字母描述了编译器产生了何种响应：W=警告信息(warning)，E=错误信息(error)，C=自动转换(conversion)，其中，自动转换意思是说编译器自动修复了错误而没有生成警告。转换是针对问题6进行的，其中编译器将共享循环变量自动私有化。W + C表示编译器既生成了警告，但同时也修复了问题。
+3. 最后一个约定是：当代码放在括号内时，表示程序发现了某个相关的问题，并且通过追溯可以找到真正的错误所在。例如：当程序员忘记在并行工作共享结构（问题7）中书写`for`时，它将导致数据竞争。英特尔线程检查器可以检测到这种竞争，从而使得原始错误导致的现象变得更加明显。
 
-The alphabetic codes used in the table are to be read as follows: the first (uncapitalized) letter is one of (c)ompiletime, (r)untime or (e)valuation time, and describes, when the mistake was spotted by the compiler. Only Assure and the Intel Thread Checker have an evaluation step after the actual program run. The second (capitalized) letter describes, what kind of reaction was generated by the compiler, and is one of the following: (W)arning, (E)rror or (C)onversion. Conversion in this context means that the mistake was fixed by the compiler without generating a warning. Conversion was done for problem six, where the compilers privatized the shared loop variable. W+C means, that the compiler generated a warning, but also fixed the problem at the same time. There is one last convention to describe in the alphabetic codes: When there are braces around the code, it means that a related problem was found by the program, which could be traced back to the actual mistake. An example: When the programmer forgets to put down `for` in a parallel worksharing construct (problem seven), it will lead to a data race. This race is detected by the Intel Thread Checker, and therefore the problem becomes obvious. All tests were performed with all warnings turned to the highest level for all compilers. 
+执行所有测试时，所有均使用编译器所支持的最高级别警告选项。
 
-It is obvious from these numbers that most of the compilers observed are no big help in avoiding the problems described in this paper. Tools such as the Intel Thread Checker are more successful, but still it is most important that programmers avoid the mistakes in the first place. This paper and the programmers checklist presented in the next section are a step in this direction. 
+从表中可知，大多数编译器对于避免本文所述错误没有太大帮助。尽管诸如英特尔线程检查器之类的工具表现更好一些，但最重要的是还是程序员首先要避免错误。下一节中介绍的程序员清单是朝着这个方向迈出的一步。
 
-## 5 OpenMP Programmers Checklist 
+## 5 OpenMP程序员清单 
 
-In this section, we summarize the advice given to novice programmers of OpenMP this far and rephrase it to fit into the easy to use format of a checklist. For this reason, the form of address is changed and the novice programmer is addressed directly. The checklist also contains other items, which we have accumulated during our own use of and experiences with OpenMP. 
+本节总结了迄今为止给OpenMP新手程序员的建议，并将其重新命名为适合易于使用的检查清单表。这个清单是面向新手程序员的，其中有些条款是我们在使用OpenMP的经验的积累。
 
-### General 
+### 一般性错误认识 
 
-* It is tempting to use fine grained parallelism with OpenMP (throwing in an occasional `#pragma omp parallel for` before loops). Unfortunately, this rarely leads to big performance gains, because of overhead such as thread creation and scheduling. You therefore have to search for potential for coarser- grained parallelism. 
+* 使用OpenMP进行细粒度的并行性很有吸引力（在循环之前放置`pragma omp parallel for`）。不幸的是，由于线程创建和调度等开销，这很少会带来巨大的性能提升。因此，必须在更粗粒度并行性方面寻找潜力。
 
-- Related to the point above, when you have nested loops, try to parallelize only the outer loop. Loop reordering techniques can sometimes help here. 
+- 基于上一条款，对于嵌套循环，尽可能尝试并行化外层循环。循环重新排序技术有时可提供帮助。
 
-- Use reduction where applicable. If the operation you need is not predefined, 
+- 适用时尽可能使用归约。如果OpenMP没有定义所需的归约运算，则可以像第3.7节那样自己自己实现它。
 
-  implement it yourself as shown in Sect. 3.7. 
+- 注意到目前仍有许多编译器不支持嵌套并行，或者，即使支持，也只是保证了正确性，并没有任何性能收益。
 
-- Beware of nested parallelism, as many compilers still do not support it, 
+- 在进行I / O（针对屏幕或文件）时，首先将信息写入缓冲区（这个过程甚至可以并行完成），然后在一次推送到设备。 
 
-  and even if it is supported, nested parallelism may not give you any speed 
+- 使用多个编译器测试您的程序，并打开所有警告， 以便让不同的编译器发现不同的错误。 
 
-  increases. 
+- 使用英特尔线程检查器或Assure等工具检测编程错误，并指导您编写性能更好的程序。 
 
-- When doing I/O (either to the screen or to a file), large time savings are 
+###并行区 
 
-  possible by writing the information to a buffer first (this can sometimes even 
+- 如果要为并行区指定执行的线程数，则调用`omp_set_num_threads()`（或其它指定线程数的方法 ）必须在进入并行区*之前*进行。 
 
-  be done in parallel) and then pushing it to the device in one run. 
+- 如果程序依赖于并行区域中的线程数（例如，手动分配工作任务），请确保在进入并行区后再查询线程数量omp_get_num_threads()`。即便是禁止了线程动态调整功能，但运行时系统有时分配的线程数量也会少于预期！
 
-- Test your programs with multiple compilers and all warnings turned on, 
+- 尽力消除`private`子句，而是改在并行区内部声明私有变量。除了其他好处，这样做还会使数据共享属性子句更易于管理。
 
-  because different compilers will find different mistakes. 
+- 尽可能使用`default(none)`子句，它会让你更为关注变量的数据共享属性子句，并避免一些错误。 
 
-- Use tools such as the Intel Thread Checker or Assure, which help you to 
+###工作共享构造 
 
-  detect programming errors and write better performing programs. 
+- 对于要并行化的每个循环，检查循环的每次迭代是否必须执行相同的工作量。如果工作量差别显著，则静态任务调度（通常是编译器中的默认调度方式）可能会损害性能，此时应该考虑`dynamic`或`guided`的任务调度。
+- 在工作共享构造中明确指定调度类型，默认的调度方式会随具体实现而不同！ 
 
-  ### Parallel Regions 
+- 如果使用`ordered`，请记住总是必须同时使用`ordered`子句和`ordered`结构。 
 
-- If you want to specify the number of threads to carry out a parallel region, you must invoke `omp_set_num_threads()` *before* the start of that region (or use other means to specify the number of threads *before* entering the region). 
+###同步 
 
-- If you rely on the number of threads in a parallel region (e.g. for manual work distribution), make sure you actually get this number (by checking `omp_get_num_threads()` after entering the region). Sometimes, the runtime system will give you less threads, even when the dynamic adjustment of threads is off! 
+- 如果有多个线程访问变量，并且其中一个访问是写操作，则必须使用同步，即使它只是一个简单的操作（如$i=1$）也要如此，否则OpenMP无法保证任何结果！
 
-- Try to get rid of the `private` clause, and declare private variables at the beginning of the parallel region instead. Among other reasons, this makes your data-sharing attribute clauses more manageable. 
+- 只要可能，使用`atomic`而不是`critical`，因为编译器更容易优化`atomic`，而非`critical`。 
 
-- Use `default(none)`, because it makes you think about your data-sharing attribute clauses for all variables and avoids some errors. 
+- 尽量在关键区域内放置尽可能少的代码。例如，复杂的函数调用通常可以预先执行。
 
-  ### Worksharing Constructs 
+- 尽量避免因为多次重复调用关键区而带来的额外成本，例如在进入关键区域之前先检查条件。 
 
-- For each loop you parallelize, check whether or not every iteration of the loop has to do the same amount of work. If this is not the case, the static work schedule (which is often the default in compilers) might hurt your performance and you should consider dynamic or guided scheduling. 
-- Whatever kind of schedule you choose, explicitly specify it in the worksharing construct, as the default is implementation-defined! 
+- 只在必要时使用锁，其余情况尽可能使用`critical`子句。如果必须使用锁，请确保从同一个线程调用`omp_set_lock()`和`omp_unset_lock()`。
 
-- If you use `ordered`, remember that you always have to use both the `ordered` clause and the `ordered` construct. 
+- 避免嵌套关键区域，如果真有需要，请特别注意避免死锁。 
 
-### Synchronisation 
+- `critical`区通常是开销最大的同步构造（例如在许多机器架构上，由于要执行栅障操作，因而需要大约两倍的时间来执行），因此要对此进行针对性优化。但请记住，这里仅考虑的是实际执行同步本身的操作，而没有考虑线程必须在栅障上或关键区域之前等待的时间（这取决于程序结构、调度程序等多种因素）。 
 
-- If more than one thread accesses a variable and one of the accesses is a write, you must use synchronization, even if it is just a simple operation like $i = 1$. There are no guarantees by OpenMP on the results otherwise! 
+###内存模型 
 
-- Use `atomic` instead of `critical` if possible, because the compiler might be able to optimize out the `atomic`, while it can rarely do that for `critical`. 
+* 时刻牢记OpenMP的内存模型。即使您只读取共享变量，也必须事先将其刷新(flush)，除非出现了OpenMP规范中描述的非常罕见的极端情况。
+* 在OpenMP 2.5之前，锁定操作并不意味着进行隐式刷新。 
 
-- Try to put as little code inside critical regions as possible. Complicated function calls, for example, can often be carried out beforehand. 
+## 6 相关工作 
 
-- Try to avoid the costs associated with repeatedly calling critical regions, for instance by checking for a condition before entering the critical region. 
+我们不知道有关OpenMP中经常出错的任何其他研究。当然，在教科书[4]和教授OpenMP的演示文稿中，包含了一些错误警告以及提高性能的技术，但大多数时候，这些更多是关于并行编程的一般陷阱（例如避免死锁的警告）。有一个有趣的资源值得一提：袁林的博客[5]，他已经开始用OpenMP来描述经常犯的错误。有趣的是，在撰写本文时，他没有触及我们所描述的任何错误，这使我们认为OpenMP规范中隐藏了更多错误来源，本文提供的OpenMP检查清单绝非全面。
 
-- Only use locks when necessary and resort to the `critical` clause in all other cases. If you have to use locks, make sure to invoke `omp_set_lock()` and `omp_unset_lock()` from the same thread. 
+## 7 小结 
 
-- Avoid nesting of critical regions, and if needed, beware of deadlocks. 
+在本文中，我们提出了一项关于OpenMP经常出错的研究。作者对两个学期参与并行编程课程的学生作业进行整理，列出他们最常见的错误来源。我们归纳了15个常见错误，提出了相应的最佳实践建议，以避免将来出现这些错误。这些最佳实践已被列入新手程序员的检查清单，并加入作者自己实践 的一些经验。事实表明，当前主流OpenMP编译器并不能保护程序员免于犯这些错误。
 
-- A critical region is usually the most expensive synchronisation construct (and takes about twice as much time to carry out as e. g. a barrier on many architectures), therefore start optimizing your programs accordingly — but keep in mind that these numbers only account for the time needed to actually perform the synchronisation, and not the time a thread has to wait on a barrier or before a critical region (which of course depends on various factors, among them the structure of your program or the scheduler). 
+##致谢 
 
-  ### Memory Model 
+我们感谢Bj̈orn Knafla校对论文及其富有洞察力的评论。我们感谢在亚琛工业大学计算机中心，达姆施塔特技术大学和卡塞尔大学提供用于测试不同的编译器和硬件。最后，感谢我们课程的学生，没有他们，我们就不可能从初学者的角度来看待OpenMP。
 
-* Beware of the OpenMP memory model. Even if you only read a shared variable, you have to flush it beforehand, except in very rare edge cases described in the specification.
-* Be sure to remember that locking operations do not imply an implicit flush before OpenMP 2.5. 
-
-## 6 Related Work 
-
-We are not aware of any other studies regarding frequently made mistakes in OpenMP. Of course, in textbooks [4] and presentations teaching OpenMP, some warnings for mistakes are included along with techniques to increase performance, but most of the time, these are more about general pitfalls regarding parallel programming (like e.g. warnings to avoid deadlocks). There is one interesting resource to mention though: the blog of Yuan Lin [5], where he has started to describe frequently made errors with OpenMP. Interestingly, at the time of this writing, he has not touched any errors that we have described as well, which leads us to think that there are many more sources of errors hidden inside the OpenMP specification and that our OpenMP checklist is by no means all-embracing and complete. 
-
-## 7 Summary 
-
-In this paper, we have presented a study on frequently made mistakes with OpenMP. Students visiting the authors’ courses on parallel programming have been observed for two terms to find out, which were their most frequent sources of errors. We presented 15 mistakes and recommendations for best practices to avoid them in the future. These best practices have been put into a checklist for novice programmers, along with some practices from the authors’ own experiences. It has also been shown, that the OpenMP-compilers available today are not able to protect the programmer from making these mistakes. 
-
-## Acknowledgments 
-
-We are grateful to Bj ̈orn Knafla for proofreading the paper and for his insightful comments. We thank the University Computing Centers at the RWTH Aachen, TU Darmstadt and University of Kassel for providing the computing facilities used to test our sample applications on different compilers and hardware. Last but not least, we thank the students of our courses, without whom it would have been impossible for us to look at OpenMP from a beginners perspective. 
-
-## References 
+##参考文献 
 
 1. Hoeflinger, J.P., de Supinski, B.R.: The OpenMP memory model. In: Proceedings of the First International Workshop on OpenMP - IWOMP 2005. (2005) 
 2. Lin, Y., Copty, N., Terboven, C., an Mey, D.: Automatic scoping of variables in par- allel regions of an OpenMP program. In: Proceedings of the Workshop on OpenMP Applications & Tools - WOMPAT 2004. (2004) 
 3. OpenMP Architecture Review Board: OpenMP specifications. http://www.openmp. org/specs (2005) 
 4. Chandra, R., Dagum, L., Kohr, D.: Parallel Programming in OpenMP. Morgan Kaufmann Publishers (2000) 
 5. Lin, Y.: Reducing the complexity of parallel programming. http://blogs.sun. com/roller/page/yuanlin (2005) 
+
